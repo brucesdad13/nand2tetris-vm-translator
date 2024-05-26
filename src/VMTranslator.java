@@ -28,7 +28,7 @@ public class VMTranslator {
             Debug.println("Processing directory: " + inputFileName);
 
             // isolate the directory name and append .asm (remove trailing /, if necessary)
-            outputFileName = inputFileName + ".asm";
+            outputFileName = input.getName() + ".asm";
             codewriter = new CodeWriter(outputFileName); // instantiate the CodeWriter class
 
             File[] files = input.listFiles();

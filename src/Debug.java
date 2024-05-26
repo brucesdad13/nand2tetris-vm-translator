@@ -5,7 +5,7 @@
  * 2024-05-24: Initial version
  */
 public class Debug {
-    public static boolean DEBUG_MODE = false; // set to true to enable debugging
+    public static boolean DEBUG_MODE = true; // set to true to enable debugging
 
     /**
      * Print a message to the console
