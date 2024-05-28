@@ -19,8 +19,8 @@ public class VMTranslator {
         }
 
         String inputFileName = args[0];
-        String outputFileName = "";
-        CodeWriter codewriter = null;
+        String outputFileName;
+        CodeWriter codewriter;
 
         // If the program's argument is a directory, process all .vm files in the directory
         File input = new File(inputFileName);
@@ -61,7 +61,6 @@ public class VMTranslator {
             parseInput(parser, inputFileName, codewriter); // shared output file
         }
         codewriter.close(); // close the output file
-        return;
     }
 
     /**
@@ -70,7 +69,7 @@ public class VMTranslator {
      * @param inputFileName the name of the input file
      * @param codeWriter the CodeWriter object
      */
-    public static void parseInput(Parser parser, String inputFileName, CodeWriter codewriter) {
+    public static void parseInput(Parser parser, String inputFileName, CodeWriter codeWriter) {
         // Ensure the input file exists, is readable, and has the .vm extension
         Path inputFile = Paths.get(inputFileName);
         try {
@@ -84,6 +83,8 @@ public class VMTranslator {
             return;
         }
 
+       codeWriter.setFileName(inputFileName); // set the file name
+
         while (parser.hasMoreCommands()) {
             parser.advance(); // advance to the next command
             int commandType = parser.commandType(); // get the type of command
@@ -92,17 +93,17 @@ public class VMTranslator {
                 case Parser.C_ARITHMETIC:
                     Debug.print("C_ARITHMETIC: ");
                     Debug.println(parser.arg1());
-                    codewriter.writeArithmetic(parser.arg1()); // write the arithmetic command
+                    codeWriter.writeArithmetic(parser.arg1()); // write the arithmetic command
                     break;
                 case Parser.C_PUSH:
                     Debug.print("C_PUSH: ");
                     Debug.println(parser.arg1() + " // Index: " + parser.arg2());
-                    codewriter.writePushPop(Parser.C_PUSH, parser.arg1(), parser.arg2());
+                    codeWriter.writePushPop(Parser.C_PUSH, parser.arg1(), parser.arg2());
                     break;
                 case Parser.C_POP:
                     Debug.print("C_POP: ");
                     Debug.println(parser.arg1() + " // Index: " + parser.arg2());
-                    codewriter.writePushPop(Parser.C_POP, parser.arg1(), parser.arg2());
+                    codeWriter.writePushPop(Parser.C_POP, parser.arg1(), parser.arg2());
                     break;
                 case Parser.C_LABEL:
                     Debug.println("C_LABEL: ");

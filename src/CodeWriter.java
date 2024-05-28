@@ -18,7 +18,7 @@
  * ---------+---------------------------+-----------------------------------------
  * temp     | Temp variables            | 8 multi-purpose temp variables; shared by all f
  * ---------+---------------------------+-----------------------------------------
- * constant | Constants 0-32767         | Psuedo-segment; not part of RAM; seen by all f
+ * constant | Constants 0-32767         | Pseudo-segment; not part of RAM; seen by all f
  * ---------+---------------------------+-----------------------------------------
  * Memory address layout (decimal):
  *         Register | Name | Usage
@@ -45,10 +45,9 @@
  */
 
 import java.io.*;
-import java.nio.file.*;
 
 public class CodeWriter {
-    private BufferedWriter writer = null;
+    private final BufferedWriter writer;
     private String currentFileName = null; // current .VM file being translated
 
     /**
@@ -282,7 +281,7 @@ public class CodeWriter {
                             writer.write("// push this " + index + "\n"); // write a comment for readability
                             writer.write("@" + index + "\n"); // load the index into the A register
                             writer.write("D=A\n"); // D = i
-                            writer.write("@THIS\n"); // load the base address of the this segment into the A register
+                            writer.write("@THIS\n"); // load the base address of the 'this' segment into the A register
                             writer.write("A=M+D\n"); // point to THIS[i]
                             writer.write("D=M\n"); // D = *THIS
                             writer.write("@SP\n"); // load the stack pointer into the A register
@@ -307,7 +306,7 @@ public class CodeWriter {
                         case "pointer": // push pointer i: push THIS/THAT
                             writer.write("// push pointer " + index + "\n"); // write a comment for readability
                             if (index == 0) {
-                                writer.write("@THIS\n"); // load the base address of the this segment into the A register
+                                writer.write("@THIS\n"); // load the base address of the 'this' segment into the A register
                             } else if (index == 1) {
                                 writer.write("@THAT\n"); // load the base address of the that segment into the A register
                             } else {
@@ -382,7 +381,7 @@ public class CodeWriter {
                             writer.write("// pop this " + index + "\n"); // write a comment for readability
                             writer.write("@" + index + "\n"); // load the index into the A register
                             writer.write("D=A\n"); // D = i
-                            writer.write("@THIS\n"); // load the base address of the this segment into the A register
+                            writer.write("@THIS\n"); // load the base address of the 'this' segment into the A register
                             writer.write("D=M+D\n"); // D = THIS[i]
                             writer.write("@R13\n"); // load the temp register into the A register
                             writer.write("M=D\n"); // R13 = THIS[i]
@@ -414,7 +413,7 @@ public class CodeWriter {
                             writer.write("AM=M-1\n"); // decrement SP and point to the top of the stack
                             writer.write("D=M\n"); // D = *SP
                             if (index == 0) {
-                                writer.write("@THIS\n"); // load the base address of the this segment into the A register
+                                writer.write("@THIS\n"); // load the base address of the 'this' segment into the A register
                             } else if (index == 1) {
                                 writer.write("@THAT\n"); // load the base address of the that segment into the A register
                             } else {
