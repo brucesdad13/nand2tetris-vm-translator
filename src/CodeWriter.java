@@ -53,23 +53,17 @@ public class CodeWriter {
 
     /**
      * Opens the output file/stream and gets ready to write into it
-     * @param outputFileName
+     * @param outputFileName the name of the .ASM output file
      */
     CodeWriter(String outputFileName) {
-        // Ensure the output file exists and is writable
-        Path outputPath = Paths.get(outputFileName);
-        try
-        {
-            outputPath.getFileSystem().provider().checkAccess(outputPath, AccessMode.WRITE);
-            Debug.println("VM Translator output file exists and is writable");
-        }
-        catch (IOException e)
-        {
-            Debug.println("VM Translator output file I/O Exception: " + e);
+        // Assert that filename ends in .asm
+        if (!outputFileName.toLowerCase().endsWith(".asm")) {
+            throw new IllegalArgumentException("Invalid output file name: " + outputFileName);
         }
 
         try {
             writer = new BufferedWriter(new FileWriter(outputFileName));
+            Debug.println("Opened output file: " + outputFileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -218,6 +212,7 @@ public class CodeWriter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        Debug.println("Wrote Arithmetic command: " + command);
     }
 
     /**
@@ -443,6 +438,7 @@ public class CodeWriter {
         catch (IOException e) {
             throw new RuntimeException(e);
         }
+        Debug.println("Wrote Push/Pop command: " + command);
     }
 
     /**
@@ -454,5 +450,6 @@ public class CodeWriter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        Debug.println("Closed output file");
     }
 }

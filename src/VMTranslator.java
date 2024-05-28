@@ -38,10 +38,10 @@ public class VMTranslator {
             }
             int fileCount = 0;
             for (File file : files) {
-                if (file.getName().endsWith(".vm")) {
+                if (file.getName().toLowerCase().endsWith(".vm")) {
                     System.out.println("Processing file: " + file.getName());
                     Parser parser = new Parser(file.getPath()); // unique parser object for each file per API
-                    parseInput(parser, file.getPath(), outputFileName); // shared output file
+                    parseInput(parser, file.getPath(), codewriter); // shared output file
                     fileCount++;
                 }
             }
@@ -58,8 +58,9 @@ public class VMTranslator {
             codewriter = new CodeWriter(outputFileName); // instantiate the CodeWriter class
 
             Parser parser = new Parser(inputFileName); // unique parser object for each file per API
-            parseInput(parser, inputFileName, outputFileName); // shared output file TODO: pass codewriter
+            parseInput(parser, inputFileName, codewriter); // shared output file
         }
+        codewriter.close(); // close the output file
         return;
     }
 
@@ -67,9 +68,9 @@ public class VMTranslator {
      * Parse the input file, generate the Hack assembly code, and write it to the output file
      * @param parser the Parser object
      * @param inputFileName the name of the input file
-     * @param outputFileName the name of the output file
+     * @param codeWriter the CodeWriter object
      */
-    public static void parseInput(Parser parser, String inputFileName, String outputFileName) {
+    public static void parseInput(Parser parser, String inputFileName, CodeWriter codewriter) {
         // Ensure the input file exists, is readable, and has the .vm extension
         Path inputFile = Paths.get(inputFileName);
         try {
@@ -85,45 +86,52 @@ public class VMTranslator {
 
         while (parser.hasMoreCommands()) {
             parser.advance(); // advance to the next command
-            Debug.print("Current command: " + parser.currentCommand + " // ");
             int commandType = parser.commandType(); // get the type of command
             //Debug.println("Command type: " + commandType);
             switch (commandType) {
                 case Parser.C_ARITHMETIC:
-                    Debug.println("Command type: C_ARITHMETIC");
-                    Debug.println("Arithmetic command: " + parser.arg1());
+                    Debug.print("C_ARITHMETIC: ");
+                    Debug.println(parser.arg1());
+                    codewriter.writeArithmetic(parser.arg1()); // write the arithmetic command
                     break;
                 case Parser.C_PUSH:
-                    Debug.println("Command type: C_PUSH");
-                    Debug.println("Segment: " + parser.arg1() + " // Index: " + parser.arg2());
+                    Debug.print("C_PUSH: ");
+                    Debug.println(parser.arg1() + " // Index: " + parser.arg2());
+                    codewriter.writePushPop(Parser.C_PUSH, parser.arg1(), parser.arg2());
                     break;
                 case Parser.C_POP:
-                    Debug.println("Command type: C_POP");
-                    Debug.println("Segment: " + parser.arg1() + " // Index: " + parser.arg2());
+                    Debug.print("C_POP: ");
+                    Debug.println(parser.arg1() + " // Index: " + parser.arg2());
+                    codewriter.writePushPop(Parser.C_POP, parser.arg1(), parser.arg2());
                     break;
                 case Parser.C_LABEL:
-                    Debug.println("Command type: C_LABEL");
-                    Debug.println("Label: " + parser.arg1());
+                    Debug.println("C_LABEL: ");
+                    Debug.println(parser.arg1());
+                    Debug.println("C_LABEL not implemented");
                     break;
                 case Parser.C_GOTO:
-                    Debug.println("Command type: C_GOTO");
-                    Debug.println("Label: " + parser.arg1());
+                    Debug.println("C_GOTO: ");
+                    Debug.println(parser.arg1());
+                    Debug.println("C_GOTO not implemented");
                     break;
                 case Parser.C_IF:
-                    Debug.println("Command type: C_IF");
-                    Debug.println("Label: " + parser.arg1());
+                    Debug.println("C_IF: ");
+                    Debug.println(parser.arg1());
+                    Debug.println("C_IF not implemented");
                     break;
                 case Parser.C_FUNCTION:
-                    Debug.println("Command type: C_FUNCTION");
-                    Debug.println("Function name: " + parser.arg1() + " // Number of local variables: " + parser.arg2());
+                    Debug.println("C_FUNCTION: ");
+                    Debug.println(parser.arg1() + " // Number of local variables: " + parser.arg2());
+                    Debug.println("C_FUNCTION not implemented");
                     break;
                 case Parser.C_RETURN:
-                    Debug.println("Command type: C_RETURN");
-                    Debug.println("Return command");
+                    Debug.println("C_RETURN");
+                    Debug.println("C_RETURN not implemented");
                     break;
                 case Parser.C_CALL:
-                    Debug.println("Command type: C_CALL");
-                    Debug.println("Function name: " + parser.arg1() + " // Number of arguments: " + parser.arg2());
+                    Debug.println("C_CALL: ");
+                    Debug.println(parser.arg1() + " // Number of arguments: " + parser.arg2());
+                    Debug.println("C_CALL not implemented");
                     break;
                 default:
                     Debug.println("Command type: UNKNOWN");

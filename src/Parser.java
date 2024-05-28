@@ -12,7 +12,7 @@ public class Parser {
     private BufferedReader reader = null;
     private String line = null;
 
-    public String currentCommand = null;
+    private String currentCommand = null;
     public static final int C_ARITHMETIC = 0; // arithmetic command
     public static final int C_PUSH = 1; // push command
     public static final int C_POP = 2; // pop command
