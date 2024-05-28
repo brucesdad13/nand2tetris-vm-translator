@@ -49,6 +49,7 @@ import java.io.*;
 public class CodeWriter {
     private final BufferedWriter writer;
     private String currentFileName = null; // current .VM file being translated
+    private int labelCounter = 0; // counter for generating unique labels
 
     /**
      * Opens the output file/stream and gets ready to write into it
@@ -123,18 +124,18 @@ public class CodeWriter {
                     writer.write("D=M\n"); // D = y
                     writer.write("A=A-1\n"); // point to x
                     writer.write("D=M-D\n"); // D = x - y (if the result is 0, x = y)
-                    writer.write("@EQ_TRUE\n"); // load address of EQ_TRUE label into the A register
+                    writer.write("@EQ_TRUE_" + labelCounter + "\n"); // load address of EQ_TRUE label into the A register
                     writer.write("D;JEQ\n"); // jump to EQ_TRUE if D = 0
                     writer.write("@SP\n"); // load the stack pointer into the A register
                     writer.write("A=M-1\n"); // point to the top operand
                     writer.write("M=0\n"); // false condition, set top operand to 0 (0x0000) for false
-                    writer.write("@EQ_END\n"); // load address of EQ_END label into the A register
+                    writer.write("@EQ_END_" + labelCounter + "\n"); // load address of EQ_END label into the A register
                     writer.write("0;JMP\n"); // unconditional jump to EQ_END
-                    writer.write("(EQ_TRUE)\n"); // label for true condition
+                    writer.write("(EQ_TRUE_" + labelCounter + ")\n"); // label for true condition
                     writer.write("@SP\n"); // load the stack pointer into the A register
                     writer.write("A=M-1\n"); // point to the top operand
                     writer.write("M=-1\n"); // true condition, set top operand to -1 (0xffff) for true
-                    writer.write("(EQ_END)\n"); // label for end of comparison
+                    writer.write("(EQ_END_" + labelCounter + ")\n"); // label for end of comparison
                     break;
                 case "gt": // greater than: binary operation, pop two, compare, push one
                     writer.write("// gt\n"); // write a comment for readability
@@ -143,18 +144,18 @@ public class CodeWriter {
                     writer.write("D=M\n"); // D = y
                     writer.write("A=A-1\n"); // point to x
                     writer.write("D=M-D\n"); // D = x - y (if the result is positive, x > y)
-                    writer.write("@GT_TRUE\n"); // load address of GT_TRUE label into the A register
+                    writer.write("@GT_TRUE_" + labelCounter + "\n"); // load address of GT_TRUE label into the A register
                     writer.write("D;JGT\n"); // jump to GT_TRUE if D > 0
                     writer.write("@SP\n"); // load the stack pointer into the A register
                     writer.write("A=M-1\n"); // point to the top operand
                     writer.write("M=0\n"); // false condition, set top operand to 0 (0x0000) for false
-                    writer.write("@GT_END\n"); // load address of GT_END label into the A register
+                    writer.write("@GT_END_" + labelCounter + "\n"); // load address of GT_END label into the A register
                     writer.write("0;JMP\n"); // unconditional jump to GT_END
-                    writer.write("(GT_TRUE)\n"); // label for true condition
+                    writer.write("(GT_TRUE_" + labelCounter + ")\n"); // label for true condition
                     writer.write("@SP\n"); // load the stack pointer into the A register
                     writer.write("A=M-1\n"); // point to the top operand
                     writer.write("M=-1\n"); // true condition, set top operand to -1 (0xffff) for true
-                    writer.write("(GT_END)\n"); // label for end of comparison
+                    writer.write("(GT_END_" + labelCounter + ")\n"); // label for end of comparison
                     break;
                 case "lt": // less than: binary operation, pop two, compare, push one
                     writer.write("// lt\n"); // write a comment for readability
@@ -163,18 +164,18 @@ public class CodeWriter {
                     writer.write("D=M\n"); // D = y
                     writer.write("A=A-1\n"); // point to x
                     writer.write("D=M-D\n"); // D = x - y (if the result is negative, x < y)
-                    writer.write("@LT_TRUE\n"); // load address of LT_TRUE label into the A register
+                    writer.write("@LT_TRUE_" + labelCounter + "\n"); // load address of LT_TRUE label into the A register
                     writer.write("D;JLT\n"); // jump to LT_TRUE if D < 0
                     writer.write("@SP\n"); // load the stack pointer into the A register
                     writer.write("A=M-1\n"); // point to the top operand
                     writer.write("M=0\n"); // false condition, set top operand to 0 (0x0000) for false
-                    writer.write("@LT_END\n"); // load address of LT_END label into the A register
+                    writer.write("@LT_END_" + labelCounter + "\n"); // load address of LT_END label into the A register
                     writer.write("0;JMP\n"); // unconditional jump to LT_END
-                    writer.write("(LT_TRUE)\n"); // label for true condition
+                    writer.write("(LT_TRUE_" + labelCounter + ")\n"); // label for true condition
                     writer.write("@SP\n"); // load the stack pointer into the A register
                     writer.write("A=M-1\n"); // point to the top operand
                     writer.write("M=-1\n"); // true condition, set top operand to -1 (0xffff) for true
-                    writer.write("(LT_END)\n"); // label for end of comparison
+                    writer.write("(LT_END_" + labelCounter + ")\n"); // label for end of comparison
                     // note: the old y operand is still in the stack as garbage
                     // note: the old x operand is overwritten with the result
                     break;
@@ -211,6 +212,7 @@ public class CodeWriter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        labelCounter++; // increment the label counter for unique labels
         Debug.println("Wrote Arithmetic command: " + command);
     }
 
