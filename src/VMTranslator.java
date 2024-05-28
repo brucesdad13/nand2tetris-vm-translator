@@ -83,7 +83,53 @@ public class VMTranslator {
             return;
         }
 
-        // TODO: Implement the VM Translator
+        while (parser.hasMoreCommands()) {
+            parser.advance(); // advance to the next command
+            Debug.print("Current command: " + parser.currentCommand + " // ");
+            int commandType = parser.commandType(); // get the type of command
+            //Debug.println("Command type: " + commandType);
+            switch (commandType) {
+                case Parser.C_ARITHMETIC:
+                    Debug.println("Command type: C_ARITHMETIC");
+                    Debug.println("Arithmetic command: " + parser.arg1());
+                    break;
+                case Parser.C_PUSH:
+                    Debug.println("Command type: C_PUSH");
+                    Debug.println("Segment: " + parser.arg1() + " // Index: " + parser.arg2());
+                    break;
+                case Parser.C_POP:
+                    Debug.println("Command type: C_POP");
+                    Debug.println("Segment: " + parser.arg1() + " // Index: " + parser.arg2());
+                    break;
+                case Parser.C_LABEL:
+                    Debug.println("Command type: C_LABEL");
+                    Debug.println("Label: " + parser.arg1());
+                    break;
+                case Parser.C_GOTO:
+                    Debug.println("Command type: C_GOTO");
+                    Debug.println("Label: " + parser.arg1());
+                    break;
+                case Parser.C_IF:
+                    Debug.println("Command type: C_IF");
+                    Debug.println("Label: " + parser.arg1());
+                    break;
+                case Parser.C_FUNCTION:
+                    Debug.println("Command type: C_FUNCTION");
+                    Debug.println("Function name: " + parser.arg1() + " // Number of local variables: " + parser.arg2());
+                    break;
+                case Parser.C_RETURN:
+                    Debug.println("Command type: C_RETURN");
+                    Debug.println("Return command");
+                    break;
+                case Parser.C_CALL:
+                    Debug.println("Command type: C_CALL");
+                    Debug.println("Function name: " + parser.arg1() + " // Number of arguments: " + parser.arg2());
+                    break;
+                default:
+                    Debug.println("Command type: UNKNOWN");
+                    break;
+            }
+        }
 
         // Close the Hack Assembler input file and exit
         parser.close();

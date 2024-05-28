@@ -56,8 +56,8 @@ public class Parser {
                 // remove comments
                 line = line.replaceAll("//.*", "");
 
-                // remove whitespace
-                line = line.replaceAll("\\s+", "");
+                // remove leading and trailing whitespace
+                line = line.replaceAll("^\\s+|\\s+$", "");
 
                 if (line.isEmpty()) continue; // ignore empty lines
 
