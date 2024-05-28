@@ -49,7 +49,7 @@ import java.io.*;
 public class CodeWriter {
     private final BufferedWriter writer;
     private String currentFileName = null; // current .VM file being translated
-    private int labelCounter = 0; // counter for generating unique labels
+    private int labelCounter = 1; // counter for generating unique labels
 
     /**
      * Opens the output file/stream and gets ready to write into it

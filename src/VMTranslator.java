@@ -83,7 +83,9 @@ public class VMTranslator {
             return;
         }
 
-       codeWriter.setFileName(inputFileName); // set the file name
+        File input = new File(inputFileName);
+        String fileName = input.getName().substring(0, input.getName().lastIndexOf('.')); // remove the .vm extension
+        codeWriter.setFileName(fileName); // set the file name
 
         while (parser.hasMoreCommands()) {
             parser.advance(); // advance to the next command
