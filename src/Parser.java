@@ -91,10 +91,10 @@ public class Parser {
             return C_POP;
         else if (currentCommand.contains("label"))
             return C_LABEL;
+        else if (currentCommand.contains("if-goto")) // process if-goto before goto
+            return C_IF;
         else if (currentCommand.contains("goto"))
             return C_GOTO;
-        else if (currentCommand.contains("if-goto"))
-            return C_IF;
         else if (currentCommand.contains("function"))
             return C_FUNCTION;
         else if (currentCommand.contains("return"))
