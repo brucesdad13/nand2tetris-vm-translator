@@ -4,6 +4,7 @@
  * by Charles Stevenson (brucesdad13@gmail.com)
  * Revision History:
  * 2024-05-25: Initial version
+ * 2024-05-28: Added support for parsing label, goto, if-goto, function, return, and call commands
  */
 
 import java.io.*;
@@ -90,7 +91,6 @@ public class VMTranslator {
         while (parser.hasMoreCommands()) {
             parser.advance(); // advance to the next command
             int commandType = parser.commandType(); // get the type of command
-            //Debug.println("Command type: " + commandType);
             switch (commandType) {
                 case Parser.C_ARITHMETIC:
                     Debug.print("C_ARITHMETIC: ");
@@ -110,31 +110,31 @@ public class VMTranslator {
                 case Parser.C_LABEL:
                     Debug.println("C_LABEL: ");
                     Debug.println(parser.arg1());
-                    Debug.println("C_LABEL not implemented");
+                    codeWriter.writeLabel(parser.arg1());
                     break;
                 case Parser.C_GOTO:
                     Debug.println("C_GOTO: ");
                     Debug.println(parser.arg1());
-                    Debug.println("C_GOTO not implemented");
+                    codeWriter.writeGoto(parser.arg1());
                     break;
                 case Parser.C_IF:
                     Debug.println("C_IF: ");
                     Debug.println(parser.arg1());
-                    Debug.println("C_IF not implemented");
+                    codeWriter.writeIf(parser.arg1());
                     break;
                 case Parser.C_FUNCTION:
                     Debug.println("C_FUNCTION: ");
                     Debug.println(parser.arg1() + " // Number of local variables: " + parser.arg2());
-                    Debug.println("C_FUNCTION not implemented");
+                    codeWriter.writeFunction(parser.arg1(), parser.arg2());
                     break;
                 case Parser.C_RETURN:
                     Debug.println("C_RETURN");
-                    Debug.println("C_RETURN not implemented");
+                    codeWriter.writeReturn();
                     break;
                 case Parser.C_CALL:
                     Debug.println("C_CALL: ");
                     Debug.println(parser.arg1() + " // Number of arguments: " + parser.arg2());
-                    Debug.println("C_CALL not implemented");
+                    codeWriter.writeCall(parser.arg1(), parser.arg2());
                     break;
                 default:
                     Debug.println("Command type: UNKNOWN");

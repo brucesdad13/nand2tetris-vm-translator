@@ -127,7 +127,7 @@ public class Parser {
         // Should only be called if the command is C_PUSH, C_POP, C_FUNCTION, or C_CALL
         if (commandType() != C_PUSH && commandType() != C_POP && commandType() != C_FUNCTION && commandType() != C_CALL)
             throw new IllegalArgumentException("Command is not a push, pop, function, or call command");
-        return Integer.parseInt(currentCommand.split(" ")[2]);
+        return Integer.parseInt(currentCommand.split(" ")[2]); // FIXME: handle arbitrary whitespace
     }
 
     /**

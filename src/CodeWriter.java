@@ -56,17 +56,20 @@ public class CodeWriter {
      * @param outputFileName the name of the .ASM output file
      */
     CodeWriter(String outputFileName) {
-        // Assert that filename ends in .asm
+        // Assert that filename ends in .asm (likely unnecessary)
         if (!outputFileName.toLowerCase().endsWith(".asm")) {
             throw new IllegalArgumentException("Invalid output file name: " + outputFileName);
         }
 
-        try {
+        try { // open the output file for writing
             writer = new BufferedWriter(new FileWriter(outputFileName));
             Debug.println("Opened output file: " + outputFileName);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e); // rethrow the exception as an unchecked exception
         }
+
+        // write the bootstrap code to initialize the VM
+        //writeInit(); //FIXME: uncomment after testing first three scripts -CKS
     }
 
     /**
@@ -440,6 +443,227 @@ public class CodeWriter {
             throw new RuntimeException(e);
         }
         Debug.println("Wrote Push/Pop command: " + command);
+    }
+
+    /**
+     * Writes assembly code that effects the VM initialization, also called bootstrap code
+     * This code must be placed at the beginning of the output file
+     */
+    void writeInit() {
+        try {
+            writer.write("// bootstrap code\n"); // write a comment for readability
+            writer.write("@256\n"); // load the base address of the stack pointer into the A register
+            writer.write("D=A\n"); // D = 256
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("M=D\n"); // SP = 256
+            writeCall("Sys.init", 0); // call Sys.init
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Debug.println("Wrote Init code");
+    }
+
+    /**
+     * Writes assembly code that effects the label command
+     * @param label the label to be written
+     */
+    void writeLabel(String label) {
+        try {
+            writer.write("// label " + label + "\n"); // write a comment for readability
+            writer.write("(" + label + ")\n"); // write the label
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Debug.println("Wrote Label: " + label);
+    }
+
+    /**
+     * Writes assembly code that effects the goto command
+     * @param label the label to be written
+     */
+    void writeGoto(String label) {
+        try {
+            writer.write("// goto " + label + "\n"); // write a comment for readability
+            writer.write("@" + label + "\n"); // load the label into the A register
+            writer.write("0;JMP\n"); // unconditional jump to the label
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Debug.println("Wrote Goto: " + label);
+    }
+
+    /**
+     * Writes assembly code that effects the if-goto command
+     * @param label the label to be written
+     */
+    void writeIf(String label) {
+        try {
+            writer.write("// if-goto " + label + "\n"); // write a comment for readability
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("AM=M-1\n"); // decrement SP and point to the top of the stack
+            writer.write("D=M\n"); // D = *SP
+            writer.write("@" + label + "\n"); // load the label into the A register
+            writer.write("D;JNE\n"); // jump to the label if D != 0
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Debug.println("Wrote If-Goto: " + label);
+    }
+
+    /**
+     * Writes assembly code that effects the call command
+     * @param functionName the name of the function to be called
+     * @param numArgs the number of arguments to be passed to the function
+     */
+    void writeCall(String functionName, int numArgs) {
+        try {
+            writer.write("// call " + functionName + " " + numArgs + "\n"); // write a comment for readability
+            // push return address
+            writer.write("@RETURN_ADDRESS_" + labelCounter + "\n"); // load the return address into the A register
+            writer.write("D=A\n"); // D = return address
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("A=M\n"); // point to the top of the stack
+            writer.write("M=D\n"); // push return address onto the stack
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("M=M+1\n"); // increment the stack pointer
+            // push LCL
+            writer.write("@LCL\n"); // load the base address of the local segment into the A register
+            writer.write("D=M\n"); // D = LCL
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("A=M\n"); // point to the top of the stack
+            writer.write("M=D\n"); // push LCL onto the stack
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("M=M+1\n"); // increment the stack pointer
+            // push ARG
+            writer.write("@ARG\n"); // load the base address of the argument segment into the A register
+            writer.write("D=M\n"); // D = ARG
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("A=M\n"); // point to the top of the stack
+            writer.write("M=D\n"); // push ARG onto the stack
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("M=M+1\n"); // increment the stack pointer
+            // push THIS
+            writer.write("@THIS\n"); // load the base address of the 'this' segment into the A register
+            writer.write("D=M\n"); // D = THIS
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("A=M\n"); // point to the top of the stack
+            writer.write("M=D\n"); // push THIS
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("M=M+1\n"); // increment the stack pointer
+            // push THAT
+            writer.write("@THAT\n"); // load the base address of the that segment into the A register
+            writer.write("D=M\n"); // D = THAT
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("A=M\n"); // point to the top of the stack
+            writer.write("M=D\n"); // push THAT
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("M=M+1\n"); // increment the stack pointer
+            // ARG = SP - n - 5
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("D=M\n"); // D = SP
+            writer.write("@" + (numArgs + 5) + "\n"); // load the number of arguments into the A register
+            writer.write("D=D-A\n"); // D = SP - n - 5
+            writer.write("@ARG\n"); // load the base address of the argument segment into the A register
+            writer.write("M=D\n"); // ARG = SP - n - 5
+            // LCL = SP
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("D=M\n"); // D = SP
+            writer.write("@LCL\n"); // load the base address of the local segment into the A register
+            writer.write("M=D\n"); // LCL = SP
+            // goto functionName
+            writer.write("@" + functionName + "\n"); // load the function name into the A register
+            writer.write("0;JMP\n"); // unconditional jump to the function
+            // (return address)
+            writer.write("(RETURN_ADDRESS_" + labelCounter + ")\n"); // label for return address
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Debug.println("Wrote Call: " + functionName + " " + numArgs);
+    }
+
+    /**
+     * Writes assembly code that effects the return command
+     */
+    void writeReturn() {
+        try {
+            writer.write("// return\n"); // write a comment for readability
+            // FRAME = LCL // FRAME is a temporary variable
+            writer.write("@LCL\n"); // load the base address of the local segment into the A register
+            writer.write("D=M\n"); // D = LCL
+            writer.write("@R13\n"); // load the temp register into the A register
+            writer.write("M=D\n"); // R13 = LCL
+            // RET = *(FRAME - 5) // put the return address in a temp register
+            writer.write("@5\n"); // load 5 into the A register
+            writer.write("A=D-A\n"); // point to LCL - 5
+            writer.write("D=M\n"); // D = *(LCL - 5)
+            writer.write("@R14\n"); // load the temp register into the A register
+            writer.write("M=D\n"); // R14 = *(LCL - 5)
+            // *ARG = pop() // reposition the return value for the caller
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("AM=M-1\n"); // decrement SP and point to the top of the stack
+            writer.write("D=M\n"); // D = *SP
+            writer.write("@ARG\n"); // load the base address of the argument segment into the A register
+            writer.write("A=M\n"); // point to ARG
+            writer.write("M=D\n"); // *ARG = *SP
+            // SP = ARG + 1 // restore SP of the caller
+            writer.write("@ARG\n"); // load the base address of the argument segment into the A register
+            writer.write("D=M+1\n"); // D = ARG + 1
+            writer.write("@SP\n"); // load the stack pointer into the A register
+            writer.write("M=D\n"); // SP = ARG + 1
+            // THAT = *(FRAME - 1) // restore THAT of the caller
+            writer.write("@R13\n"); // load the temp register into the A register
+            writer.write("AM=M-1\n"); // decrement R13 and point to LCL - 1
+            writer.write("D=M\n"); // D = *(LCL - 1)
+            writer.write("@THAT\n"); // load the base address of the that segment into the A register
+            writer.write("M=D\n"); // THAT = *(LCL - 1)
+            // THIS = *(FRAME - 2) // restore THIS of the caller
+            writer.write("@R13\n"); // load the temp register into the A register
+            writer.write("AM=M-1\n"); // decrement R13 and point to LCL - 2
+            writer.write("D=M\n"); // D = *(LCL - 2)
+            writer.write("@THIS\n"); // load the base address of the 'this' segment into the A register
+            writer.write("M=D\n"); // THIS = *(LCL - 2)
+            // ARG = *(FRAME - 3) // restore ARG of the caller
+            writer.write("@R13\n"); // load the temp register into the A register
+            writer.write("AM=M-1\n"); // decrement R13 and point to LCL - 3
+            writer.write("D=M\n"); // D = *(LCL - 3)
+            writer.write("@ARG\n"); // load the base address of the argument segment into the A register
+            writer.write("M=D\n"); // ARG = *(LCL - 3)
+            // LCL = *(FRAME - 4) // restore LCL of the caller
+            writer.write("@R13\n"); // load the temp register into the A register
+            writer.write("AM=M-1\n"); // decrement R13 and point to LCL - 4
+            writer.write("D=M\n"); // D = *(LCL - 4)
+            writer.write("@LCL\n"); // load the base address of the local segment into the A register
+            writer.write("M=D\n"); // LCL = *(LCL - 4)
+            // goto RET // goto the return address in the caller's code
+            writer.write("@R14\n"); // load the return address into the A register
+            writer.write("A=M\n"); // point to the return address
+            writer.write("0;JMP\n"); // unconditional jump to the return address
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Debug.println("Wrote Return code");
+    }
+
+    /**
+     * Writes assembly code that effects the function command
+     * @param functionName the name of the function to be written
+     * @param numLocals the number of local variables to be allocated (k in the API)
+     */
+    void writeFunction(String functionName, int numLocals) {
+        try {
+            writer.write("// function " + functionName + " " + numLocals + "\n"); // write a comment for readability
+            writer.write("(" + functionName + ")\n"); // write the function label
+            for (int i = 0; i < numLocals; i++) { // repeat numLocals (k) times
+                writer.write("@SP\n"); // load the stack pointer into the A register
+                writer.write("A=M\n"); // point to the top of the stack
+                writer.write("M=0\n"); // push 0 onto the stack; purpose: initialize local variables to 0
+                writer.write("@SP\n"); // load the stack pointer into the A register
+                writer.write("M=M+1\n"); // increment the stack pointer
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Debug.println("Wrote Function: " + functionName + " " + numLocals);
     }
 
     /**
