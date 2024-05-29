@@ -69,7 +69,7 @@ public class CodeWriter {
         }
 
         // write the bootstrap code to initialize the VM
-        //writeInit(); //FIXME: uncomment after testing first three scripts -CKS
+        writeInit(); //TODO: implement commandline argument to disable the bootstrap code
     }
 
     /**
