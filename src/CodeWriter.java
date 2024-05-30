@@ -20,6 +20,7 @@
  * ---------+---------------------------+-----------------------------------------
  * constant | Constants 0-32767         | Pseudo-segment; not part of RAM; seen by all f
  * ---------+---------------------------+-----------------------------------------
+ * Standard mapping of the VM on the Hack platform is as follows...
  * Memory address layout (decimal):
  *         Register | Name | Usage
  * -----------------+------+--------------------------------------------------------------
@@ -49,7 +50,9 @@ import java.io.*;
 public class CodeWriter {
     private final BufferedWriter writer;
     private String currentFileName = null; // current .VM file being translated
+    private String currentFuncName = null; // current function name translated
     private int labelCounter = 1; // counter for generating unique labels
+    private int returnCounter = 1; // counter for generating unique return labels
 
     /**
      * Opens the output file/stream and gets ready to write into it
@@ -74,7 +77,11 @@ public class CodeWriter {
      * @param fileName the name of the .VM file
      */
     void setFileName(String fileName) {
-        this.currentFileName = fileName;
+        currentFileName = fileName;
+        currentFuncName = null; // reset the current function name
+        labelCounter = 1; // reset the label counter
+        returnCounter = 1; // reset the return counter
+        Debug.println("Set current file name: " + fileName);
     }
 
     /**
@@ -83,6 +90,9 @@ public class CodeWriter {
      *                (add, sub, neg, eq, gt, lt, and, or, not)
      */
     void writeArithmetic(String command) {
+        String label;
+        label = currentFileName + "." + currentFuncName;
+        label = label + "$" + command; // generate a globally unique label
         try {
             switch (command) {
                 case "add": // add: binary operation, pop two, add, push one
@@ -124,18 +134,19 @@ public class CodeWriter {
                     writer.write("D=M\n"); // D = y
                     writer.write("A=A-1\n"); // point to x
                     writer.write("D=M-D\n"); // D = x - y (if the result is 0, x = y)
-                    writer.write("@EQ_TRUE_" + labelCounter + "\n"); // load address of EQ_TRUE label into the A register
+                    writer.write("@" + label + "_true." + labelCounter + "\n"); // load address of EQ_TRUE label into the A register
                     writer.write("D;JEQ\n"); // jump to EQ_TRUE if D = 0
                     writer.write("@SP\n"); // load the stack pointer into the A register
                     writer.write("A=M-1\n"); // point to the top operand
                     writer.write("M=0\n"); // false condition, set top operand to 0 (0x0000) for false
-                    writer.write("@EQ_END_" + labelCounter + "\n"); // load address of EQ_END label into the A register
+                    writer.write("@" + label + "_end." + labelCounter + "\n"); // load address of EQ_END label into the A register
                     writer.write("0;JMP\n"); // unconditional jump to EQ_END
-                    writer.write("(EQ_TRUE_" + labelCounter + ")\n"); // label for true condition
+                    writer.write("(" + label + "_true." + labelCounter + ")\n"); // label for true condition
                     writer.write("@SP\n"); // load the stack pointer into the A register
                     writer.write("A=M-1\n"); // point to the top operand
                     writer.write("M=-1\n"); // true condition, set top operand to -1 (0xffff) for true
-                    writer.write("(EQ_END_" + labelCounter + ")\n"); // label for end of comparison
+                    writer.write("(" + label + "_end." + labelCounter + ")\n"); // label for end of comparison
+                    labelCounter++;
                     break;
                 case "gt": // greater than: binary operation, pop two, compare, push one
                     writer.write("// gt\n"); // write a comment for readability
@@ -144,18 +155,19 @@ public class CodeWriter {
                     writer.write("D=M\n"); // D = y
                     writer.write("A=A-1\n"); // point to x
                     writer.write("D=M-D\n"); // D = x - y (if the result is positive, x > y)
-                    writer.write("@GT_TRUE_" + labelCounter + "\n"); // load address of GT_TRUE label into the A register
+                    writer.write("@" + label + "_true." + labelCounter + "\n"); // load address of GT_TRUE label into the A register
                     writer.write("D;JGT\n"); // jump to GT_TRUE if D > 0
                     writer.write("@SP\n"); // load the stack pointer into the A register
                     writer.write("A=M-1\n"); // point to the top operand
                     writer.write("M=0\n"); // false condition, set top operand to 0 (0x0000) for false
-                    writer.write("@GT_END_" + labelCounter + "\n"); // load address of GT_END label into the A register
+                    writer.write("@" + label + "_end." + labelCounter + "\n"); // load address of GT_END label into the A register
                     writer.write("0;JMP\n"); // unconditional jump to GT_END
-                    writer.write("(GT_TRUE_" + labelCounter + ")\n"); // label for true condition
+                    writer.write("(" + label + "_true." + labelCounter + ")\n"); // label for true condition
                     writer.write("@SP\n"); // load the stack pointer into the A register
                     writer.write("A=M-1\n"); // point to the top operand
                     writer.write("M=-1\n"); // true condition, set top operand to -1 (0xffff) for true
-                    writer.write("(GT_END_" + labelCounter + ")\n"); // label for end of comparison
+                    writer.write("(" + label + "_end." + labelCounter + ")\n"); // label for end of comparison
+                    labelCounter++;
                     break;
                 case "lt": // less than: binary operation, pop two, compare, push one
                     writer.write("// lt\n"); // write a comment for readability
@@ -164,18 +176,19 @@ public class CodeWriter {
                     writer.write("D=M\n"); // D = y
                     writer.write("A=A-1\n"); // point to x
                     writer.write("D=M-D\n"); // D = x - y (if the result is negative, x < y)
-                    writer.write("@LT_TRUE_" + labelCounter + "\n"); // load address of LT_TRUE label into the A register
+                    writer.write("@" + label + "_true." + labelCounter + "\n"); // load address of LT_TRUE label into the A register
                     writer.write("D;JLT\n"); // jump to LT_TRUE if D < 0
                     writer.write("@SP\n"); // load the stack pointer into the A register
                     writer.write("A=M-1\n"); // point to the top operand
                     writer.write("M=0\n"); // false condition, set top operand to 0 (0x0000) for false
-                    writer.write("@LT_END_" + labelCounter + "\n"); // load address of LT_END label into the A register
+                    writer.write("@" + label + "_end." + labelCounter + "\n"); // load address of LT_END label into the A register
                     writer.write("0;JMP\n"); // unconditional jump to LT_END
-                    writer.write("(LT_TRUE_" + labelCounter + ")\n"); // label for true condition
+                    writer.write("(" + label + "_true." + labelCounter + ")\n"); // label for true condition
                     writer.write("@SP\n"); // load the stack pointer into the A register
                     writer.write("A=M-1\n"); // point to the top operand
                     writer.write("M=-1\n"); // true condition, set top operand to -1 (0xffff) for true
-                    writer.write("(LT_END_" + labelCounter + ")\n"); // label for end of comparison
+                    writer.write("(" + label + "_end." + labelCounter + ")\n"); // label for end of comparison
+                    labelCounter++;
                     // note: the old y operand is still in the stack as garbage
                     // note: the old x operand is overwritten with the result
                     break;
@@ -212,7 +225,6 @@ public class CodeWriter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        labelCounter++; // increment the label counter for unique labels
         Debug.println("Wrote Arithmetic command: " + command);
     }
 
@@ -449,13 +461,14 @@ public class CodeWriter {
      * This code must be placed at the beginning of the output file
      */
     void writeInit() {
+        currentFileName = "Sys"; // set the current file name to Sys.init since bootstrap is not in file
         try {
             writer.write("// bootstrap code\n"); // write a comment for readability
             writer.write("@256\n"); // load the base address of the stack pointer into the A register
             writer.write("D=A\n"); // D = 256
             writer.write("@SP\n"); // load the stack pointer into the A register
             writer.write("M=D\n"); // SP = 256
-            writeCall("Sys.init", 0); // call Sys.init
+            writeCall("Sys.init", 0); // call Sys.init within the Sys.vm file
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -467,6 +480,8 @@ public class CodeWriter {
      * @param label the label to be written
      */
     void writeLabel(String label) {
+        label = currentFuncName + "$" + label; // append the function name to the label
+        label = currentFileName + "." + label; // prepend the file name to the label
         try {
             writer.write("// label " + label + "\n"); // write a comment for readability
             writer.write("(" + label + ")\n"); // write the label
@@ -481,6 +496,8 @@ public class CodeWriter {
      * @param label the label to be written
      */
     void writeGoto(String label) {
+        label = currentFuncName + "$" + label; // append the function name to the label
+        label = currentFileName + "." + label; // prepend the function name to the label
         try {
             writer.write("// goto " + label + "\n"); // write a comment for readability
             writer.write("@" + label + "\n"); // load the label into the A register
@@ -496,6 +513,8 @@ public class CodeWriter {
      * @param label the label to be written
      */
     void writeIf(String label) {
+        label = currentFuncName + "$" + label; // append the function name to the label
+        label = currentFileName + "." + label; // prepend the function name to the label
         try {
             writer.write("// if-goto " + label + "\n"); // write a comment for readability
             writer.write("@SP\n"); // load the stack pointer into the A register
@@ -515,10 +534,13 @@ public class CodeWriter {
      * @param numArgs the number of arguments to be passed to the function
      */
     void writeCall(String functionName, int numArgs) {
+        if (currentFileName != null)
+            functionName = currentFileName + "." + functionName; // prepend the filename to the function name //FIXME: function might be in different file
+        String returnAddress = functionName + "$ret." + returnCounter; // generate a globally unique return address
         try {
             writer.write("// call " + functionName + " " + numArgs + "\n"); // write a comment for readability
             // push return address
-            writer.write("@RETURN_ADDRESS_" + labelCounter + "\n"); // load the return address into the A register
+            writer.write("@" + returnAddress + "\n"); // load the return address into the A register
             writer.write("D=A\n"); // D = return address
             writer.write("@SP\n"); // load the stack pointer into the A register
             writer.write("A=M\n"); // point to the top of the stack
@@ -573,11 +595,11 @@ public class CodeWriter {
             writer.write("@" + functionName + "\n"); // load the function name into the A register
             writer.write("0;JMP\n"); // unconditional jump to the function
             // (return address)
-            writer.write("(RETURN_ADDRESS_" + labelCounter + ")\n"); // label for return address
+            writer.write("(" + returnAddress + ")\n"); // label for return address
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        labelCounter++; // increment the label counter for unique labels
+        returnCounter++;
         Debug.println("Wrote Call: " + functionName + " " + numArgs);
     }
 
@@ -650,6 +672,9 @@ public class CodeWriter {
      * @param numLocals the number of local variables to be allocated (k in the API)
      */
     void writeFunction(String functionName, int numLocals) {
+        currentFuncName = functionName; // set the current function name for label generation
+        functionName = currentFileName + "." + functionName; // prepend the filename to the function name
+        labelCounter=1; // reset the label counter
         try {
             writer.write("// function " + functionName + " " + numLocals + "\n"); // write a comment for readability
             writer.write("(" + functionName + ")\n"); // write the function label
