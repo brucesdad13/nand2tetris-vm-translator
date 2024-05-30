@@ -580,6 +580,7 @@ public class CodeWriter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        labelCounter++; // increment the label counter for unique labels
         Debug.println("Wrote Call: " + functionName + " " + numArgs);
     }
 
