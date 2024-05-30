@@ -21,9 +21,10 @@ public class VMTranslator {
             return;
         }
 
-        String inputFileName = args[0];
-        String outputFileName;
-        CodeWriter codewriter;
+        String inputFileName = args[0]; // input file name
+        String outputFileName; // output file name
+        CodeWriter codewriter; // instantiate the CodeWriter class
+        FunctionTable functionTable = new FunctionTable(); // instantiate the FunctionTable class
 
         // If the program's argument is a directory, process all .vm files in the directory
         File input = new File(inputFileName);
@@ -33,27 +34,41 @@ public class VMTranslator {
             // isolate the directory name and append .asm (remove trailing path separator, if any)
             outputFileName = input.getName() + ".asm"; // use the directory name as the output file name per API convention
             outputFileName = input.getPath() + File.separator + outputFileName; // concatenate the directory name with the output file name
-            codewriter = new CodeWriter(outputFileName); // instantiate the CodeWriter class
-
-            // write the bootstrap code to initialize the VM when translating a directory
-            codewriter.writeInit();
+            codewriter = new CodeWriter(outputFileName, functionTable); // instantiate the CodeWriter class
 
             File[] files = input.listFiles();
             if (files == null) {
                 System.out.println("No files found in directory: " + inputFileName);
                 return;
             }
+
+            // First pass: parse all the functions and generate a mapping
             int fileCount = 0;
+            for (File file : files) {
+                if (file.getName().toLowerCase().endsWith(".vm")) {
+                    System.out.println("First pass looking for functions in file: " + file.getName());
+                    Parser parser = new Parser(file.getPath()); // unique parser object for each file per API
+                    parseFunctions(parser, file.getPath(), functionTable); // shared output file
+                    fileCount++;
+                }
+            }
+            // sanity check
+            if (fileCount == 0) throw new IllegalArgumentException("No .vm files found in directory: " + inputFileName);
+
+            // print out for debugging
+            Debug.println("Function table:");
+            if (Debug.DEBUG_MODE) functionTable.printTable(); // print the function table (for debugging
+
+            // write the bootstrap code to initialize the VM when translating a directory
+            codewriter.writeInit();
+
+            // Second pass: refer to the mapping when creating function labels
             for (File file : files) {
                 if (file.getName().toLowerCase().endsWith(".vm")) {
                     System.out.println("Processing file: " + file.getName());
                     Parser parser = new Parser(file.getPath()); // unique parser object for each file per API
                     parseInput(parser, file.getPath(), codewriter); // shared output file
-                    fileCount++;
                 }
-            }
-            if (fileCount == 0) {
-                System.out.println("No .vm files found in directory: " + inputFileName);
             }
         }
         else // single file
@@ -62,9 +77,11 @@ public class VMTranslator {
 
             // Generate output file name from input file name
             outputFileName = inputFileName.substring(0, inputFileName.lastIndexOf('.')) + ".asm"; // replace .vm with .asm
-            codewriter = new CodeWriter(outputFileName); // instantiate the CodeWriter class
 
-            // Do not write the bootstrap code when translating a single file. Otherwise online grader will fail.
+            // instantiate the CodeWriter class; function table is empty not necessary for single file
+            codewriter = new CodeWriter(outputFileName, functionTable);
+
+            // Do not write the bootstrap code when translating a single file. Otherwise, online grader will fail.
             Debug.println("Skipping writing bootstrap code to output file");
 
             Parser parser = new Parser(inputFileName); // unique parser object for each file per API
@@ -74,7 +91,27 @@ public class VMTranslator {
     }
 
     /**
-     * Parse the input file VM code, generate the Hack assembly code, and write it to the output file
+     * First pass: Parse all the functions and generate a mapping
+     * @param parser the Parser object
+     * @param inputFileName the name of the input file
+     */
+    public static void parseFunctions(Parser parser, String inputFileName, FunctionTable functionTable) {
+        File input = new File(inputFileName);
+        String fileName = input.getName().substring(0, input.getName().lastIndexOf('.')); // remove the .vm extension
+
+        while (parser.hasMoreCommands()) {
+            parser.advance(); // advance to the next command
+            int commandType = parser.commandType(); // get the type of command
+
+            if (commandType == Parser.C_FUNCTION) {
+                // Add the function name and filename to the map
+                functionTable.addEntry(parser.arg1(), fileName);
+            }
+        }
+    }
+
+    /**
+     * Second pass: Parse the input file VM code, generate the Hack assembly code, and write it to the output file
      * @param parser the Parser object
      * @param inputFileName the name of the input file
      * @param codeWriter the CodeWriter object

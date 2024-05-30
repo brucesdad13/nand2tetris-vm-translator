@@ -51,14 +51,16 @@ public class CodeWriter {
     private final BufferedWriter writer;
     private String currentFileName = null; // current .VM file being translated
     private String currentFuncName = null; // current function name translated
+    private final FunctionTable functionTable; // instantiate the FunctionTable class
     private int labelCounter = 1; // counter for generating unique labels
     private int returnCounter = 1; // counter for generating unique return labels
 
     /**
      * Opens the output file/stream and gets ready to write into it
      * @param outputFileName the name of the .ASM output file
+     * @param functionTable the FunctionTable object
      */
-    CodeWriter(String outputFileName) {
+    CodeWriter(String outputFileName, FunctionTable functionTable) {
         // Assert that filename ends in .asm (likely unnecessary)
         if (!outputFileName.toLowerCase().endsWith(".asm")) {
             throw new IllegalArgumentException("Invalid output file name: " + outputFileName);
@@ -70,6 +72,9 @@ public class CodeWriter {
         } catch (IOException e) {
             throw new RuntimeException(e); // rethrow the exception as an unchecked exception
         }
+
+        this.functionTable = functionTable; // set the function table
+        Debug.println("Set function table...");
     }
 
     /**
@@ -461,7 +466,7 @@ public class CodeWriter {
      * This code must be placed at the beginning of the output file
      */
     void writeInit() {
-        currentFileName = "Sys"; // set the current file name to Sys.init since bootstrap is not in file
+        currentFileName = "Bootstrap"; // set the current file name to "Bootstrap" for readability
         try {
             writer.write("// bootstrap code\n"); // write a comment for readability
             writer.write("@256\n"); // load the base address of the stack pointer into the A register
@@ -534,9 +539,19 @@ public class CodeWriter {
      * @param numArgs the number of arguments to be passed to the function
      */
     void writeCall(String functionName, int numArgs) {
-        if (currentFileName != null)
-            functionName = currentFileName + "." + functionName; // prepend the filename to the function name //FIXME: function might be in different file
-        String returnAddress = functionName + "$ret." + returnCounter; // generate a globally unique return address
+        // generate a globally unique return address
+        String returnAddress = currentFileName + "." + functionName + "$ret." + returnCounter; // generate a globally unique return address
+        Debug.println("Return Address: " + returnAddress);
+
+        // determine which file prefix to use for the function
+        String functionPrefix = functionTable.getFile(functionName); // get the file name of the function
+        if (!functionTable.contains(functionName) || functionPrefix == null) { // if the function is not in the function table
+            throw new IllegalArgumentException("Function not found: " + functionName);
+        }
+        Debug.println("Function Name: " + functionName + " Prefix: " + functionPrefix);
+        functionName = functionPrefix + "." + functionName; // prepend the filename to the function name
+
+        // preserve the return address, LCL, ARG, THIS, and THAT
         try {
             writer.write("// call " + functionName + " " + numArgs + "\n"); // write a comment for readability
             // push return address
