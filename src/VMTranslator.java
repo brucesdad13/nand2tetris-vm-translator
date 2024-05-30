@@ -34,6 +34,9 @@ public class VMTranslator {
             outputFileName = input.getPath() + File.separator + outputFileName; // concatenate the directory name with the output file name
             codewriter = new CodeWriter(outputFileName); // instantiate the CodeWriter class
 
+            // write the bootstrap code to initialize the VM when translating a directory
+            codewriter.writeInit();
+
             File[] files = input.listFiles();
             if (files == null) {
                 System.out.println("No files found in directory: " + inputFileName);
@@ -59,6 +62,9 @@ public class VMTranslator {
             // Generate output file name from input file name
             outputFileName = inputFileName.substring(0, inputFileName.lastIndexOf('.')) + ".asm"; // replace .vm with .asm
             codewriter = new CodeWriter(outputFileName); // instantiate the CodeWriter class
+
+            // Do not write the bootstrap code when translating a single file. Otherwise online grader will fail.
+            Debug.println("Skipping writing bootstrap code to output file");
 
             Parser parser = new Parser(inputFileName); // unique parser object for each file per API
             parseInput(parser, inputFileName, codewriter); // shared output file

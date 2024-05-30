@@ -67,9 +67,6 @@ public class CodeWriter {
         } catch (IOException e) {
             throw new RuntimeException(e); // rethrow the exception as an unchecked exception
         }
-
-        // write the bootstrap code to initialize the VM
-        writeInit(); //TODO: implement commandline argument to disable the bootstrap code
     }
 
     /**
