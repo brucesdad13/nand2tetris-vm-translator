@@ -1,7 +1,7 @@
 /**
  * CodeWriter.java
  * Writes the Hack machine code to the output file
- * The 8 memory segments seen by every VM function qre (indexes start at 0):
+ * The 8 memory segments seen by every VM function are (indexes start at 0):
  * ---------+---------------------------+-----------------------------------------
  * argument | Stores the f's args       | Dynamic alloc. by VM when f entered
  * ---------+---------------------------+-----------------------------------------
