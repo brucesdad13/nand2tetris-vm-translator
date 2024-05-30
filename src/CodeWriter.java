@@ -382,6 +382,8 @@ public class CodeWriter {
                             writer.write("M=D\n"); // filename.i = *SP
                             break;
                         // Note: there is no case for pop constant i because constants are not actually part of the RAM
+                        case "constant": // pop constant i: pop i
+                            throw new IllegalArgumentException("Cannot pop a constant: " + index);
                         case "this": // pop this i: pop THIS[i]
                             writer.write("// pop this " + index + "\n"); // write a comment for readability
                             writer.write("@" + index + "\n"); // load the index into the A register
