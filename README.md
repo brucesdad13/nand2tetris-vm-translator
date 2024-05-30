@@ -56,7 +56,7 @@ Then, compile and run the VMTranslator as described in the [Usage](#usage) secti
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE.md](LICENSE.md) file for details.
 
 ---
 
