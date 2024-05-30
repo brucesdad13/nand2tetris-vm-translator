@@ -1,6 +1,7 @@
 /**
  * VMTranslator.java
- * Project 7: VM Translator Stage I - Handling Stack Arithmetic Commands
+ * A full-scale VM-to-Hack translator for the Hack computer platform. Conforms to the Nand2Tetris course
+ * VM specification (Parts I and II). Translates VM code to Hack assembly code.
  * by Charles Stevenson (brucesdad13@gmail.com)
  * Revision History:
  * 2024-05-25: Initial version
