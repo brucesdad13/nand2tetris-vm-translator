@@ -7,6 +7,7 @@
  * 2024-05-25: Initial version
  * 2024-05-28: Added support for parsing label, goto, if-goto, function, return, and call commands
  * 2024-05-29: Fixed labelCounter bug in writeCall() method
+ * 2024-05-30: Refactored to more properly support unique label generation for function calls
  */
 
 import java.io.*;
@@ -16,8 +17,8 @@ public class VMTranslator {
     public static void main (String[] args) {
         // Ensure the input file and output file are provided as command line arguments
         if (args.length != 1) {
-            System.out.println("Usage: java VMTranslator [<input file>.vm or <directory>]");
-            System.out.println("Output file will be generated in the same directory as the input file named <input file>.asm");
+            System.out.println("Usage: java VMTranslator <path-to-vm-file-or-directory>");
+            System.out.println("The translator will generate a single .asm file in <path-to-vm-file-or-directory>.");
             return;
         }
 
@@ -37,10 +38,7 @@ public class VMTranslator {
             codewriter = new CodeWriter(outputFileName, functionTable); // instantiate the CodeWriter class
 
             File[] files = input.listFiles();
-            if (files == null) {
-                System.out.println("No files found in directory: " + inputFileName);
-                return;
-            }
+            if (files == null) throw new IllegalArgumentException("No files found in directory: " + inputFileName);
 
             // First pass: parse all the functions and generate a mapping
             int fileCount = 0;
@@ -52,10 +50,10 @@ public class VMTranslator {
                     fileCount++;
                 }
             }
-            // sanity check
+            // if no .vm files found, throw an exception -- nothing to do
             if (fileCount == 0) throw new IllegalArgumentException("No .vm files found in directory: " + inputFileName);
 
-            // print out for debugging
+            // print final function table for debugging
             Debug.println("Function table:");
             if (Debug.DEBUG_MODE) functionTable.printTable(); // print the function table (for debugging
 
@@ -91,7 +89,7 @@ public class VMTranslator {
     }
 
     /**
-     * First pass: Parse all the functions and generate a mapping
+     * First pass: Parse all the functions and generate a function to file mapping
      * @param parser the Parser object
      * @param inputFileName the name of the input file
      */

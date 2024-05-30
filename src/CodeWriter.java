@@ -42,7 +42,7 @@
  * - Stack: grows downward from 256 to 2047 (managed by push/pop)
  * - Heap: grows upward from 2048 to 16383
  * @author Charles Stevenson
- * @version 2024-05-28
+ * @version 2024-05-30
  */
 
 import java.io.*;
@@ -502,7 +502,7 @@ public class CodeWriter {
      */
     void writeGoto(String label) {
         label = currentFuncName + "$" + label; // append the function name to the label
-        label = currentFileName + "." + label; // prepend the function name to the label
+        label = currentFileName + "." + label; // prepend the file name to the label
         try {
             writer.write("// goto " + label + "\n"); // write a comment for readability
             writer.write("@" + label + "\n"); // load the label into the A register
@@ -519,7 +519,7 @@ public class CodeWriter {
      */
     void writeIf(String label) {
         label = currentFuncName + "$" + label; // append the function name to the label
-        label = currentFileName + "." + label; // prepend the function name to the label
+        label = currentFileName + "." + label; // prepend the file name to the label
         try {
             writer.write("// if-goto " + label + "\n"); // write a comment for readability
             writer.write("@SP\n"); // load the stack pointer into the A register
@@ -540,16 +540,16 @@ public class CodeWriter {
      */
     void writeCall(String functionName, int numArgs) {
         // generate a globally unique return address
-        String returnAddress = currentFileName + "." + functionName + "$ret." + returnCounter; // generate a globally unique return address
+        String returnAddress = currentFileName + "." + functionName + "$ret." + returnCounter;
         Debug.println("Return Address: " + returnAddress);
 
         // determine which file prefix to use for the function
-        String functionPrefix = functionTable.getFile(functionName); // get the file name of the function
-        if (!functionTable.contains(functionName) || functionPrefix == null) { // if the function is not in the function table
+        String functionPrefix = functionTable.getFile(functionName); // look up the function in the function table
+        if (!functionTable.contains(functionName) || functionPrefix == null) { // if function not in the function table
             throw new IllegalArgumentException("Function not found: " + functionName);
         }
         Debug.println("Function Name: " + functionName + " Prefix: " + functionPrefix);
-        functionName = functionPrefix + "." + functionName; // prepend the filename to the function name
+        functionName = functionPrefix + "." + functionName; // prepend the source .VM filename to the function name
 
         // preserve the return address, LCL, ARG, THIS, and THAT
         try {
@@ -614,7 +614,7 @@ public class CodeWriter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        returnCounter++;
+        returnCounter++; // increment the return address counter for uniqueness for each call
         Debug.println("Wrote Call: " + functionName + " " + numArgs);
     }
 
@@ -688,8 +688,8 @@ public class CodeWriter {
      */
     void writeFunction(String functionName, int numLocals) {
         currentFuncName = functionName; // set the current function name for label generation
-        functionName = currentFileName + "." + functionName; // prepend the filename to the function name
-        labelCounter=1; // reset the label counter
+        functionName = currentFileName + "." + functionName; // prepend the filename to the function name for uniqueness
+        labelCounter=1; // reset the label counter for each function for uniqueness
         try {
             writer.write("// function " + functionName + " " + numLocals + "\n"); // write a comment for readability
             writer.write("(" + functionName + ")\n"); // write the function label
