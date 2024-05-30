@@ -66,7 +66,7 @@ public class VMTranslator {
     }
 
     /**
-     * Parse the input file, generate the Hack assembly code, and write it to the output file
+     * Parse the input file VM code, generate the Hack assembly code, and write it to the output file
      * @param parser the Parser object
      * @param inputFileName the name of the input file
      * @param codeWriter the CodeWriter object
