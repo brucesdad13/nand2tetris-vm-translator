@@ -5,6 +5,7 @@
  * Revision History:
  * 2024-05-25: Initial version
  * 2024-05-28: Added support for parsing label, goto, if-goto, function, return, and call commands
+ * 2024-05-29: Fixed labelCounter bug in writeCall() method
  */
 
 import java.io.*;
